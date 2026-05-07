@@ -232,6 +232,17 @@ class DeliveryTrackingController extends GetxController {
         !locationService.isStreaming) {
       locationService.start();
     }
+    // Once delivered, halt every motion source: the location ticker, the
+    // in-flight tween, and snap the marker to the drop point.
+    if (model.status == DeliveryStatus.delivered) {
+      locationService.stop();
+      _animTimer?.cancel();
+      _animTimer = null;
+      _animFrom = null;
+      _animTo = null;
+      _animStartedAt = null;
+      animatedDriverPosition.value = model.dropLocation;
+    }
   }
 
   void _onNetworkChanged(NetworkStatus status) {

@@ -66,8 +66,13 @@ class _MapLayer extends GetView<DeliveryTrackingController> {
         ),
         children: [
           TileLayer(
+            // CartoDB Voyager is CDN-backed, supports subdomains, and has
+            // much better uptime/rate-limits than direct tile.openstreetmap.org
+            // (which often refuses requests from Android emulators / generic
+            // user-agents).
             urlTemplate:
-                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+            subdomains: const ['a', 'b', 'c', 'd'],
             userAgentPackageName: 'com.example.driver_location',
             maxZoom: 19,
           ),
