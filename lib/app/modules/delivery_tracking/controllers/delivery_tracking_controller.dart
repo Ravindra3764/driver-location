@@ -139,9 +139,9 @@ class DeliveryTrackingController extends GetxController {
       _animDuration = locationService.interval;
     }
 
-    // Mock backend simulation runs independently of customer connectivity.
+    // Delivery lifecycle starts immediately. Location streaming is held
+    // back until a partner is actually assigned — see _onDeliveryChanged.
     deliveryService.start();
-    locationService.start();
 
     if (networkStatus.value.isOffline) {
       _offlineSnapshot = latestLocation.value;
@@ -219,9 +219,18 @@ class DeliveryTrackingController extends GetxController {
   }
 
   void _onDeliveryChanged(DeliveryModel model) {
+    final DeliveryStatus previous = delivery.value.status;
     delivery.value = model;
     if (model.status != DeliveryStatus.searching) {
       lastKnownStatus = model.status;
+    }
+    // Kick off location streaming the moment a partner is assigned.
+    // Before this point the driver doesn't exist on the map, so the
+    // route shouldn't progress either.
+    if (previous == DeliveryStatus.searching &&
+        model.status != DeliveryStatus.searching &&
+        !locationService.isStreaming) {
+      locationService.start();
     }
   }
 
@@ -295,7 +304,8 @@ class DeliveryTrackingController extends GetxController {
     _reconnectBannerTimer?.cancel();
 
     deliveryService.start();
-    locationService.start();
+    // Location streaming will resume once the delivery transitions out
+    // of "searching" inside _onDeliveryChanged.
   }
 
   /// Demo helper — toggles connectivity for manual testing without
