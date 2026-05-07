@@ -6,10 +6,7 @@ import '../../../core/constants/app_typography.dart';
 import '../../../core/enums/delivery_status.dart';
 
 class StatusProgress extends StatelessWidget {
-  const StatusProgress({
-    required this.current,
-    super.key,
-  });
+  const StatusProgress({required this.current, super.key});
 
   final DeliveryStatus current;
 
@@ -32,8 +29,13 @@ class StatusProgress extends StatelessWidget {
 
         final int stepIndex = index ~/ 2;
         final DeliveryStatus step = steps[stepIndex];
-        final bool isComplete = current.step > stepIndex;
-        final bool isCurrent = current.step == stepIndex;
+        // Once the lifecycle reaches its terminal state, that final step
+        // should also render as completed (green + check), not as the
+        // active "current" dot.
+        final bool isComplete =
+            current.step > stepIndex ||
+            (current.isTerminal && current.step == stepIndex);
+        final bool isCurrent = !isComplete && current.step == stepIndex;
         return _StepDot(
           label: step.label,
           isComplete: isComplete,
@@ -60,8 +62,8 @@ class _StepDot extends StatelessWidget {
     final Color color = isComplete
         ? AppColors.statusComplete
         : isCurrent
-            ? AppColors.statusActive
-            : AppColors.statusPending;
+        ? AppColors.statusActive
+        : AppColors.statusPending;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -76,8 +78,11 @@ class _StepDot extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: isComplete
-              ? const Icon(Icons.check_rounded,
-                  size: 14, color: AppColors.surface)
+              ? const Icon(
+                  Icons.check_rounded,
+                  size: 14,
+                  color: AppColors.surface,
+                )
               : Container(
                   width: 8,
                   height: 8,
