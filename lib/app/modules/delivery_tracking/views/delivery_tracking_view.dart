@@ -85,20 +85,57 @@ class _RouteLine extends GetView<DeliveryTrackingController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final LatLng? driverPos = controller.displayedDriverLocation;
-      if (driverPos == null) return const SizedBox.shrink();
+      final List<LatLng> route = controller.fullRoute;
+      if (route.isEmpty) return const SizedBox.shrink();
+
+      final int? rawIndex = controller.displayedRouteIndex;
+      // Clamp so traveled/remaining splits stay valid even before the
+      // first tick has arrived.
+      final int splitIndex = (rawIndex ?? 0).clamp(0, route.length - 1);
+
+      final LatLng? livePos = controller.displayedDriverLocation;
+      // Traveled = everything up to the partner's current waypoint plus
+      // a leg from that waypoint to the live (interpolated) position so
+      // the grey trail follows the marker.
+      final List<LatLng> traveled = [
+        ...route.sublist(0, splitIndex + 1),
+        ?livePos,
+      ];
+      // Remaining = leg from live position to the next waypoint, then
+      // the rest of the route. Keeps the colored line glued to the marker.
+      final List<LatLng> remaining = [
+        ?livePos,
+        ...route.sublist(splitIndex + 1),
+      ];
+
       return PolylineLayer(
         polylines: [
+          // Long route — entire planned path, drawn faintly so the user
+          // can see the full journey at a glance.
           Polyline(
-            points: [driverPos, controller.delivery.value.dropLocation],
-            color: controller.isOffline
-                ? AppColors.textTertiary
-                : AppColors.primary,
-            strokeWidth: 4,
-            pattern: controller.isOffline
-                ? const StrokePattern.dotted()
-                : const StrokePattern.solid(),
+            points: route,
+            color: AppColors.border,
+            strokeWidth: 6,
           ),
+          // Short route — segment already traveled by the partner.
+          if (traveled.length > 1)
+            Polyline(
+              points: traveled,
+              color: AppColors.textTertiary,
+              strokeWidth: 5,
+            ),
+          // Remaining route — what's left to the drop point. Highlighted.
+          if (remaining.length > 1)
+            Polyline(
+              points: remaining,
+              color: controller.isOffline
+                  ? AppColors.textTertiary
+                  : AppColors.primary,
+              strokeWidth: 5,
+              pattern: controller.isOffline
+                  ? const StrokePattern.dotted()
+                  : const StrokePattern.solid(),
+            ),
         ],
       );
     });
@@ -202,17 +239,11 @@ class _TopOverlay extends GetView<DeliveryTrackingController> {
                     ),
                   ),
                 ),
-                const SizedBox(width: AppDimensions.spacingSm),
+                const SizedBox(width: AppDimensions.spacingMd),
                 _CircleIconButton(
                   icon: Icons.refresh_rounded,
                   tooltip: 'Restart tracking',
                   onTap: controller.restartTracking,
-                ),
-                const SizedBox(width: AppDimensions.spacingSm),
-                _CircleIconButton(
-                  icon: Icons.cloud_off_rounded,
-                  tooltip: 'Toggle offline (demo)',
-                  onTap: controller.toggleSimulatedNetwork,
                 ),
               ],
             ),

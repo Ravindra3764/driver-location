@@ -62,10 +62,13 @@ class LocationService {
       LocationUpdate(
         position: current,
         bearing: bearing,
+        routeIndex: _index,
         timestamp: DateTime.now(),
       ),
     );
   }
+
+  List<LatLng> get fullRoute => _route;
 
   double _bearingBetween(LatLng a, LatLng b) {
     final double lat1 = _toRadians(a.latitude);

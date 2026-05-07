@@ -4,9 +4,11 @@ import 'package:latlong2/latlong.dart';
 import 'package:driver_location/app/core/utils/distance_calculator.dart';
 
 void main() {
-  test('GeoCalculator.formatDistance formats sub-kilometer values in meters',
+  test('GeoCalculator.formatDistance rounds sub-km values to 100 m',
       () {
-    expect(GeoCalculator.formatDistance(0.25), '250 m');
+    expect(GeoCalculator.formatDistance(0.247), '200 m');
+    expect(GeoCalculator.formatDistance(0.38), '400 m');
+    expect(GeoCalculator.formatDistance(0.97), '1.0 km');
     expect(GeoCalculator.formatDistance(1.4), '1.4 km');
   });
 

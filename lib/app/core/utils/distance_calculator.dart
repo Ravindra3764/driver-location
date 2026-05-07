@@ -21,7 +21,10 @@ class GeoCalculator {
 
   static String formatDistance(double km) {
     if (km < 1) {
-      final int meters = (km * 1000).round();
+      // Round to the nearest 100 m so the label only ticks in hundreds
+      // (e.g. 247 m → 200 m, 380 m → 400 m).
+      final int meters = ((km * 1000) / 100).round() * 100;
+      if (meters >= 1000) return '1.0 km';
       return '$meters m';
     }
     return '${km.toStringAsFixed(1)} km';
